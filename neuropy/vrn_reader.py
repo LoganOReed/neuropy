@@ -106,8 +106,8 @@ class VrnReader:
 if __name__ == "__main__":
     reader = VrnReader("data/228-20MGv2.CNG.vrn")
     # reader = VrnReader("data/Green_19weeks_Neuron4.CNG.vrn")
-    reader.load()
-    print(reader.list())
-    print(reader.listRefinements())
-    print(reader.readUGX(reader.getMesh1dName()))
-    print(reader.getMesh2dName(2.5))
+    # reader.load()
+    # print(reader.list())
+    # print(reader.listRefinements())
+    # print(reader.readUGX(reader.getMesh1dName()))
+    print(reader.getMesh2dName())

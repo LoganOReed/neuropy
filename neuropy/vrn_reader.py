@@ -9,6 +9,15 @@ class Geom2d:
     inflation: str
     description: str
 
+    @classmethod
+    def from_dict(cls, data):
+        return cls(
+            name = data.get('name'),
+            inflation = data.get('inflation'),
+            description = data.get('description')
+        )
+
+
 
 
 @dataclass
@@ -25,7 +34,7 @@ class Geom1d:
             name = data.get('name'),
             refinement = data.get('refinement'),
             description = data.get('description'),
-            inflations = data.get('inflations')
+            inflations = [Geom2d.from_dict(x) for x in data.get('inflations')]
                 )
 
 
@@ -77,12 +86,20 @@ class VrnReader:
     def readUGX(self, meshName):
         with zipfile.ZipFile(f"{self.fileName}", 'r') as archive:
             file = archive.read(meshName)
-            print(file)
+            return file
 
     def getMesh1dName(self, refinement = 0):
         for g1d in self.geometry.geom1d:
             if g1d.refinement == str(refinement):
                 return g1d.name
+
+
+    def getMesh2dName(self, inflation = 1.0, refinement = 0):
+        for g1d in self.geometry.geom1d:
+            if g1d.refinement == str(refinement):
+                for g2d in g1d.inflations:
+                    if g2d.inflation == str(inflation):
+                        return g2d.name
 
 
 
@@ -93,3 +110,4 @@ if __name__ == "__main__":
     print(reader.list())
     print(reader.listRefinements())
     print(reader.readUGX(reader.getMesh1dName()))
+    print(reader.getMesh2dName(2.5))

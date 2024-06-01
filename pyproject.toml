@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "neuropy"
+version = "0.1.0"
+description = ""
+authors = ["Logan Reed <me@loganreed.org>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.12"
+vedo = "^2024.5.1"
+scipy = "^1.13.1"
+pandas = "^2.2.2"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

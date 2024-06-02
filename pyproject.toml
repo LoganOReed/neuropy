@@ -10,6 +10,9 @@ python = "^3.12"
 vedo = "^2024.5.1"
 scipy = "^1.13.1"
 pandas = "^2.2.2"
+xmlschema = "^3.3.1"
+lxml = "^5.2.2"
+networkx = "^3.3"
 
 
 [build-system]

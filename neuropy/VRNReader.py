@@ -9,7 +9,7 @@ from io import StringIO, BytesIO
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-from vedo import Mesh, show
+from vedo import Mesh, show, Plotter
 
 
 @dataclass
@@ -197,10 +197,10 @@ class VrnReader:
                         print("WARNING: subset_handler not implemented yet")
 
             
-        # pprint.pp(f"mappings: {mappings}")
-        pprint.pp(f"normals: {normals}")
+        pprint.pp(f"mappings: {mappings}")
+        # pprint.pp(f"normals: {normals}")
         # pprint.pp(f"diameters: {diameters}")
-        pprint.pp(f"triangles: {triangles}")
+        # pprint.pp(f"triangles: {triangles}")
 
         grouped_tris = []
         for i in range(int(len(triangles) / 3)):
@@ -220,14 +220,30 @@ class VrnReader:
 
         mesh = Mesh([v, c])
 
-        mesh.backcolor('violet').linecolor('tomato').linewidth(2)
+        mesh.linewidth(0.02)
 
         # Print the points and faces of the mesh as numpy arrays
         print('vertices:', mesh.vertices)
         print('faces   :', mesh.cells)
 
-# Show the mesh, vertex labels, and docstring
-        show(mesh,  __doc__, viewup='z', axes=1).close()
+
+        # translate 1d vertex values to 3d for visualization
+        scalars3d = []
+        # for i in range(len(mappings)):
+            # scalars3d[i] = mappings[i][2] * (vals1d(mappings[i][1][0],mappings[i][1][1],mappings[i][1][2]) - vals1d(mappings[i][1][0],mappings[i][1][1],mappings[i][1][2]) + vals1d(mappings[i][0])
+            # scalars3d.append(i*np.sin(float(i)))
+        print(scalars3d)
+        plotter = Plotter(size=(1200, 800), axes=1)
+        plotter.show(mesh,  __doc__, viewup='z')
+        for i in range(100):
+            for j in range(len(mappings)):
+                # scalars3d[i] = mappings[i][2] * (vals1d(mappings[i][1][0],mappings[i][1][1],mappings[i][1][2]) - vals1d(mappings[i][1][0],mappings[i][1][1],mappings[i][1][2]) + vals1d(mappings[i][0])
+                scalars3d.append(i*np.sin(float(j) - i ))
+            mesh.cmap('hot', scalars3d)
+            plotter.render()
+            scalars3d = []
+        plotter.interactive().close()
+
 
         # g.add_nodes_from(nodes)
         # g.add_edges_from(edges)
@@ -239,6 +255,8 @@ class VrnReader:
 
 
 
+def vals1d(v):
+    return np.cbrt((v[0]+v[1]+v[2]))
 
 
 

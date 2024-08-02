@@ -15,6 +15,7 @@ class Consts(Enum):
     GL = 0.0 #NOTE: Ask Seibold about this
     ENA = 0.05
     EL = -0.07
+    EK = -0.09
     NI = 0.0376969
     MI = 0.0147567
     HI = 0.9959410
@@ -76,8 +77,20 @@ class Solver:
         self.time_step = min(upper_bound, dtmax)
         return min(upper_bound, dtmax)
 
-    def reactF(self, u_active, n, m, h):
-        return 0.1
+    def reactF(self, V, NN, MM, HH):
+        output = np.zeros(len(V))
+        prod = np.power(NN, 4)
+        prod = np.multiply((np.subtract(V, Consts.EK.value)),prod)
+        output = np.add(np.multiply(prod, Consts.GK.value), output)
+
+        prod = np.power(MM, 3)
+        prod = np.multiply(HH, prod)
+        prod = np.multiply((np.subtract(V, Consts.ENA.value)),prod)
+        output = np.add(np.multiply(prod, Consts.GNA.value), output)
+        output = np.add(np.multiply(np.subtract(V, Consts.EL.value),Consts.GL.value), output)
+        output = np.multiply(-1.0 / Consts.CAP.value, output)
+
+        return output 
 
     def makeSparseStencils(self):
         lhs = self.neuron.geodesic_matrix.astype('float64')
@@ -132,8 +145,8 @@ class Solver:
         self.isyn = self.isyn * 0.0
 
         self.b = lu_solve((self.lu, self.piv), self.r)
-        print(self.b)
-        # print(self.r)
+        # print(self.b)
+        print(self.r)
         return
 
     

@@ -52,8 +52,7 @@ class Solver:
         self.distances = np.sqrt(np.sum((node_locs - parent_locs)**2, axis=1))
         # Same as InitializeNeuronCell
         # self.temp_u = np.array(self.neuron.nodes)
-        self.u = [np.full(self.neuron.nodes['node_id'].size, 0.0),np.full(self.neuron.nodes['node_id'].size, 0.0)]
-        self.u[-1] = self.u[-1]
+        self.u = [np.full(self.neuron.nodes['node_id'].size, 0.0).astype("float64"),np.full(self.neuron.nodes['node_id'].size, 0.0).astype("float64")]
         self.m = np.full(self.neuron.nodes['node_id'].size, Consts.MI.value).astype("float64")
         self.m_pre = self.m
         self.n = np.full(self.neuron.nodes['node_id'].size, Consts.NI.value).astype("float64")
@@ -65,7 +64,8 @@ class Solver:
         self.time_step = self.setTargetTimeStep()
         self.lhs, self.rhs = self.makeSparseStencils()
         self.lu, self.piv = lu_factor(self.lhs)
-
+        self.uMin = -99999.9
+        self.uMax = 999999.999
 
     def setTargetTimeStep(self):
         dtmax = 50e-6
@@ -160,7 +160,7 @@ class Solver:
         self.h_pre = temp_state
 
         self.u.append(b)
-        print(self.u)
+        # print(self.u)
         return
 
     def stateExplicitSBDF2(self, s, sPre, f, fPre, dt):
@@ -203,6 +203,11 @@ class Solver:
         Vin = np. multiply(1e3, Vin)
         return 1e3 * 4.0 / (((40.0 - Vin) / 5.0) + 1.0)
 
+    def postSolve(self):
+        return
+        
+        
+
 
 
     
@@ -240,35 +245,45 @@ if __name__ == "__main__":
 
     
 
-    # for i in range(0, 255, 1):
-    #    # Change rotation
-    #
-    #    fig, ax = nv.plot2d(n, method='2d', view=('x', 'y'), color=(0,i,0))
-    #
-    #    # Save each incremental rotation as frame
-    #    plt.savefig('outputs/frame{0}.png'.format(i))
-    #    plt.close()
-    #    # plt.show()
-
     #
     # Start of solving loop logic
     #
     t_pde = 0.008 * 1e-3
     t_sim = 0.01
     t_vis = 0.02
-    endTime = 1.0
+    endTime = 0.001
     totalSteps = (int)(endTime // t_pde)
 
     # main solving loop
 
-    # preSolve()
     s = Solver("data/Green_19weeks_Neuron4.CNG.swc")
-    s.print()
+    # s.print()
 
 
     for curStep in range(totalSteps):
         s.solveStep(curStep)
 
-    s.makeSparseStencils()
+    s.postSolve()
+    # print(s.u)
+
+    i = 0
+    cmin = -0.000000001
+    cmax = 0.0
+    for i in range(len(s.u)):
+        u = s.u[i].astype("float64")
+        cmin = min(cmin,np.min(u))
+        cmax = max(cmax,np.max(u))
+        print(u)
+        print(cmin)
+        print(cmax)
+        fig, ax = nv.plot2d(s.neuron, method='2d', view=('x', 'y'), color_by=u, vmin=cmin, vmax=cmax, palette="coolwarm" )
+
+        # Save each incremental rotation as frame
+        plt.savefig('outputs/frame{0}.png'.format(i))
+        plt.close()
+       # plt.show()
+
+
+
     print(totalSteps)
 

@@ -53,18 +53,17 @@ class Solver:
         # Same as InitializeNeuronCell
         # self.temp_u = np.array(self.neuron.nodes)
         self.u = [np.full(self.neuron.nodes['node_id'].size, 0.0),np.full(self.neuron.nodes['node_id'].size, 0.0)]
-        self.u_active = self.u[-1]
-        self.m = np.full(self.neuron.nodes['node_id'].size, Consts.MI.value)
+        self.u[-1] = self.u[-1]
+        self.m = np.full(self.neuron.nodes['node_id'].size, Consts.MI.value).astype("float64")
         self.m_pre = self.m
-        self.n = np.full(self.neuron.nodes['node_id'].size, Consts.NI.value)
+        self.n = np.full(self.neuron.nodes['node_id'].size, Consts.NI.value).astype("float64")
         self.n_pre = self.n
-        self.h = np.full(self.neuron.nodes['node_id'].size, Consts.HI.value)
+        self.h = np.full(self.neuron.nodes['node_id'].size, Consts.HI.value).astype("float64")
         self.h_pre = self.h
-        self.isyn = np.full(self.neuron.nodes['node_id'].size, 0.0)
-        self.r = np.full(self.neuron.nodes['node_id'].size, 0.0)
+        self.isyn = np.full(self.neuron.nodes['node_id'].size, 0.0).astype("float64")
+        self.r = np.full(self.neuron.nodes['node_id'].size, 0.0).astype("float64")
         self.time_step = self.setTargetTimeStep()
         self.lhs, self.rhs = self.makeSparseStencils()
-        self.temp_state = np.full(self.neuron.nodes['node_id'].size, 0.0)
         self.lu, self.piv = lu_factor(self.lhs)
 
 
@@ -79,11 +78,11 @@ class Solver:
 
     def reactF(self, V, NN, MM, HH):
         output = np.zeros(len(V))
-        prod = np.power(NN, 4)
+        prod = np.power(NN, 4.0)
         prod = np.multiply((np.subtract(V, Consts.EK.value)),prod)
         output = np.add(np.multiply(prod, Consts.GK.value), output)
 
-        prod = np.power(MM, 3)
+        prod = np.power(MM, 3.0)
         prod = np.multiply(HH, prod)
         prod = np.multiply((np.subtract(V, Consts.ENA.value)),prod)
         output = np.add(np.multiply(prod, Consts.GNA.value), output)
@@ -134,20 +133,77 @@ class Solver:
 
         return lhs, rhs
         
+        
 
     # TODO:
     def solveStep(self, curStep):
-        self.u_active = (4.0 / 3.0) * self.r
-        self.r = self.r + (((4.0/3.0) * self.time_step) * self.reactF(self.u_active, self.n, self.m, self.h))
+        temp_state = np.full(self.neuron.nodes['node_id'].size, 0.0).astype("float64")
+        self.u[-1] = (4.0 / 3.0) * self.r
+        self.r = self.r + (((4.0/3.0) * self.time_step) * self.reactF(self.u[-1], self.n, self.m, self.h))
         self.r = self.r + ((-1.0/3.0) * self.u[-2])
         self.r = self.r + (((-2.0/3.0) * self.time_step) * self.reactF(self.u[-2], self.n_pre, self.m_pre, self.h_pre))
         self.r = self.r + self.isyn
         self.isyn = self.isyn * 0.0
 
-        self.b = lu_solve((self.lu, self.piv), self.r)
-        # print(self.b)
-        print(self.r)
+        b = lu_solve((self.lu, self.piv), self.r)
+
+        temp_state = self.n
+        self.n = self.stateExplicitSBDF2(self.n, self.n_pre, self.fS(self.n, self.an(self.u[-1]), self.bn(self.u[-1])), self.fS(self.n_pre, self.an(self.u[-2]), self.bn(self.u[-2])), self.time_step)
+        self.n_pre = temp_state
+
+        temp_state = self.m
+        self.m = self.stateExplicitSBDF2(self.m, self.m_pre, self.fS(self.m, self.am(self.u[-1]), self.bm(self.u[-1])), self.fS(self.m_pre, self.am(self.u[-2]), self.bm(self.u[-2])), self.time_step)
+        self.m_pre = temp_state
+
+        temp_state = self.h
+        self.h = self.stateExplicitSBDF2(self.h, self.h_pre, self.fS(self.h, self.ah(self.u[-1]), self.bh(self.u[-1])), self.fS(self.h_pre, self.ah(self.u[-2]), self.bh(self.u[-2])), self.time_step)
+        self.h_pre = temp_state
+
+        self.u.append(b)
+        print(self.u)
         return
+
+    def stateExplicitSBDF2(self, s, sPre, f, fPre, dt):
+        s = np.add(np.multiply(f, dt), s)
+        s = np.multiply(4.0/3.0, s)
+        s = np.add(np.multiply(-1.0 / 3.0, sPre), s)
+        s = np.add(np.multiply((-2.0 * dt) / 3.0, fPre), s)
+        return s
+
+    def fS(self, S, a, b):
+        return (np.multiply(a, 1 - S) - np.multiply(b, S))
+
+    def an(self, V):
+        Vin = np.array(V)
+        Vin = np.multiply(1.0e3, Vin)
+        return 1e3 * 0.032 * np.divide(15.0 - Vin, ((15.0 - Vin) / 5.0) - 1.0)
+
+    def bn(self, V):
+        Vin = np.array(V)
+        Vin = np. multiply(1e3, Vin)
+        return 1e3 * 0.5 * ((10.0 - Vin) / 40.0)
+
+    def am(self, V):
+        Vin = np.array(V)
+        Vin = np.multiply(1.0e3, Vin)
+        return 1e3 * 0.32 * np.divide(13.0 - Vin, ((13.0 - Vin) / 4.0) - 1.0)
+
+    def bm(self, V):
+        Vin = np.array(V)
+        Vin = np. multiply(1e3, Vin)
+        return 1e3 * 0.28 * np.divide(Vin - 40.0, ((Vin - 40.0) / 5.0) - 1.0)
+
+    def ah(self, V):
+        Vin = np.array(V)
+        Vin = np.multiply(1.0e3, Vin)
+        return 1e3 * 0.128 * ((17.0 - Vin) / 18.0)
+
+    def bh(self, V):
+        Vin = np.array(V)
+        Vin = np. multiply(1e3, Vin)
+        return 1e3 * 4.0 / (((40.0 - Vin) / 5.0) + 1.0)
+
+
 
     
     def print(self):

@@ -3,7 +3,7 @@ from enum import Enum
 import navis as nv
 import pandas as pd
 import matplotlib.pyplot as plt
-from scipy.linalg import lu
+from scipy.linalg import lu_factor, lu_solve
 import collections
 
 class Consts(Enum):
@@ -62,8 +62,9 @@ class Solver:
         self.isyn = np.full(self.neuron.nodes['node_id'].size, 0.0)
         self.r = np.full(self.neuron.nodes['node_id'].size, 0.0)
         self.time_step = self.setTargetTimeStep()
-        self.sparse_stencils = self.makeSparseStencils()
+        self.lhs, self.rhs = self.makeSparseStencils()
         self.temp_state = np.full(self.neuron.nodes['node_id'].size, 0.0)
+        self.lu, self.piv = lu_factor(self.lhs)
 
 
     def setTargetTimeStep(self):
@@ -123,14 +124,15 @@ class Solver:
 
     # TODO:
     def solveStep(self, curStep):
-        self.u_active = (4.0 / 3.0) * np.dot(self.u_active,self.r)
+        self.u_active = (4.0 / 3.0) * self.r
         self.r = self.r + (((4.0/3.0) * self.time_step) * self.reactF(self.u_active, self.n, self.m, self.h))
         self.r = self.r + ((-1.0/3.0) * self.u[-2])
         self.r = self.r + (((-2.0/3.0) * self.time_step) * self.reactF(self.u[-2], self.n_pre, self.m_pre, self.h_pre))
         self.r = self.r + self.isyn
         self.isyn = self.isyn * 0.0
-        # lhs, rhs = self.makeSparseStencils()
-        # print(lhs)
+
+        self.b = lu_solve((self.lu, self.piv), self.r)
+        print(self.b)
         # print(self.r)
         return
 
@@ -149,6 +151,7 @@ class Solver:
         print(self.neuron.sampling_resolution)
         print(self.time_step)
         print(self.neuron)
+        print(self.lu)
         # print(self.neuron.geodesic_matrix)
         # for i in range(len(self.neuron.edges)):
         #     print(self.neuron.geodesic_matrix.at[self.neuron.edges[i][0], self.neuron.edges[i][1]])

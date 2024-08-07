@@ -24,7 +24,7 @@ class Consts(Enum):
 
 class Solver:
     """Class for Solver"""
-    def __init__(self, filename ):
+    def __init__(self, filename, clamps=[] ):
         super(Solver, self).__init__()
         self.filename = filename
         self.neuron = nv.read_swc("data/Green_19weeks_Neuron4.CNG.swc")
@@ -50,9 +50,11 @@ class Solver:
         parent_locs = self.neuron.nodes.set_index('node_id').loc[nodes.parent_id.values, ['x', 'y', 'z']].values
         # Calculate Euclidian distances
         self.distances = np.sqrt(np.sum((node_locs - parent_locs)**2, axis=1))
+        self.clamps = clamps
         # Same as InitializeNeuronCell
         # self.temp_u = np.array(self.neuron.nodes)
         self.u = [np.full(self.neuron.nodes['node_id'].size, 0.0).astype("float64"),np.full(self.neuron.nodes['node_id'].size, 0.0).astype("float64")]
+        self.u_active = self.u[-1]
         self.m = np.full(self.neuron.nodes['node_id'].size, Consts.MI.value).astype("float64")
         self.m_pre = self.m
         self.n = np.full(self.neuron.nodes['node_id'].size, Consts.NI.value).astype("float64")
@@ -64,8 +66,6 @@ class Solver:
         self.time_step = self.setTargetTimeStep()
         self.lhs, self.rhs = self.makeSparseStencils()
         self.lu, self.piv = lu_factor(self.lhs)
-        self.uMin = -99999.9
-        self.uMax = 999999.999
 
     def setTargetTimeStep(self):
         dtmax = 50e-6
@@ -137,29 +137,29 @@ class Solver:
 
     # TODO:
     def solveStep(self, curStep):
-        temp_state = np.full(self.neuron.nodes['node_id'].size, 0.0).astype("float64")
-        self.u[-1] = (4.0 / 3.0) * self.r
-        self.r = self.r + (((4.0/3.0) * self.time_step) * self.reactF(self.u[-1], self.n, self.m, self.h))
-        self.r = self.r + ((-1.0/3.0) * self.u[-2])
-        self.r = self.r + (((-2.0/3.0) * self.time_step) * self.reactF(self.u[-2], self.n_pre, self.m_pre, self.h_pre))
+        self.u_active = (4.0 / 3.0) * self.r.astype("float64")
+        self.r = self.r + (((4.0/3.0) * self.time_step) * self.reactF(self.u_active, self.n, self.m, self.h))
+        self.r = self.r + ((-1.0/3.0) * self.u[-1])
+        self.r = self.r + (((-2.0/3.0) * self.time_step) * self.reactF(self.u_active, self.n_pre, self.m_pre, self.h_pre))
         self.r = self.r + self.isyn
         self.isyn = self.isyn * 0.0
 
         b = lu_solve((self.lu, self.piv), self.r)
 
         temp_state = self.n
-        self.n = self.stateExplicitSBDF2(self.n, self.n_pre, self.fS(self.n, self.an(self.u[-1]), self.bn(self.u[-1])), self.fS(self.n_pre, self.an(self.u[-2]), self.bn(self.u[-2])), self.time_step)
+        self.n = self.stateExplicitSBDF2(self.n, self.n_pre, self.fS(self.n, self.an(self.u_active), self.bn(self.u_active)), self.fS(self.n_pre, self.an(self.u[-1]), self.bn(self.u[-1])), self.time_step)
         self.n_pre = temp_state
 
         temp_state = self.m
-        self.m = self.stateExplicitSBDF2(self.m, self.m_pre, self.fS(self.m, self.am(self.u[-1]), self.bm(self.u[-1])), self.fS(self.m_pre, self.am(self.u[-2]), self.bm(self.u[-2])), self.time_step)
+        self.m = self.stateExplicitSBDF2(self.m, self.m_pre, self.fS(self.m, self.am(self.u_active), self.bm(self.u_active)), self.fS(self.m_pre, self.am(self.u[-1]), self.bm(self.u[-1])), self.time_step)
         self.m_pre = temp_state
 
         temp_state = self.h
-        self.h = self.stateExplicitSBDF2(self.h, self.h_pre, self.fS(self.h, self.ah(self.u[-1]), self.bh(self.u[-1])), self.fS(self.h_pre, self.ah(self.u[-2]), self.bh(self.u[-2])), self.time_step)
+        self.h = self.stateExplicitSBDF2(self.h, self.h_pre, self.fS(self.h, self.ah(self.u_active), self.bh(self.u_active)), self.fS(self.h_pre, self.ah(self.u[-1]), self.bh(self.u[-1])), self.time_step)
         self.h_pre = temp_state
 
-        self.u.append(b)
+        self.u.append(self.u_active)
+        self.u_active = b
         # print(self.u)
         return
 
@@ -202,6 +202,37 @@ class Solver:
         Vin = np.array(V)
         Vin = np. multiply(1e3, Vin)
         return 1e3 * 4.0 / (((40.0 - Vin) / 5.0) + 1.0)
+
+
+    def addClamp(self, newID):
+        self.clamps.append(newID)
+
+    def set1DValues(self, newVals):
+        for n in newVals:
+            self.u_active = self.diricheletRank1UpdateSolve(n)
+
+    def diricheletRank1UpdateSolve(self, newVal):
+        ej = np.full(self.neuron.nodes['node_id'].size, 0.0).astype("float64")
+        rj = ej
+        ZZ = ej
+        YY = ej
+
+        print(len(self.r))
+        self.r[newVal] = Consts.VCLAMP.value
+        ej[newVal] = 1.0
+        bj = np.multiply(self.lhs.transpose().to_numpy().astype("float64"),ej)
+        rj = bj.astype("float64")
+        rj[newVal] = Consts.VCLAMP.value - 1.0
+
+        ZZ = lu_solve((self.lu, self.piv), ej).astype("float64")
+        YY = lu_solve((self.lu, self.piv), self.r).astype("float64")
+
+        return np.add(YY, np.multiply((YY * rj) / (1 - ( ZZ* rj)), ZZ)).astype("float64")
+        
+
+    def postSolveStep(self, curStep):
+        if len(self.clamps) != 0:
+            self.set1DValues(self.clamps)
 
     def postSolve(self):
         return
@@ -257,19 +288,23 @@ if __name__ == "__main__":
     # main solving loop
 
     s = Solver("data/Green_19weeks_Neuron4.CNG.swc")
-    # s.print()
+    # To have actual node id instead of index
+    # s.addClamp(s.neuron.nodes.at[0,'node_id'])
+    s.addClamp(1)
+    s.print()
 
 
     for curStep in range(totalSteps):
         s.solveStep(curStep)
+        s.postSolveStep(curStep)
 
     s.postSolve()
     # print(s.u)
 
     i = 0
-    cmin = -0.000000001
-    cmax = 0.0
-    for i in range(len(s.u)):
+    cmin = -0.000200001
+    cmax = 0.05
+    for i in range(len(s.u) - 1):
         u = s.u[i].astype("float64")
         cmin = min(cmin,np.min(u))
         cmax = max(cmax,np.max(u))
@@ -287,3 +322,9 @@ if __name__ == "__main__":
 
     print(totalSteps)
 
+        # using (StreamWriter sw = File.AppendText("/home/occam/documents/code/neuropy/data/output.txt"))
+        #     {
+        #         sw.WriteLine(String.Join(",",U));
+        #     }
+        # }
+	

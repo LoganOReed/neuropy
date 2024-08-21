@@ -23,3 +23,33 @@ Edit fromUnity.py to generate extrapolated frames, and use
 ffmpeg -framerate 30 -i 'outputs/frame%d.png' outputs/out.mp4
 ```
 changing the framerate to account for the additional frames
+
+
+update visualization videos to make data 1fps and slow down number of extraps to make it actually visible
+
+make it so that it only reads every other(for example) row of actual data instead of every row
+
+make it more extreme
+
+change actual update from 5 fps to 1 or 2fps 
+
+make the update use the linear jump and linear nonjump methods of extrapolation
+
+## Checklist
+[] 1fps every datapoint jumps no extrap
+[] 1fps every datapoint jumps 15fps extrap
+[] 1fps every datapoint jumps 30fps extrap
+[] 1fps every datapoint jumps 60fps extrap
+[] 1fps every other datapoint jumps no extrap
+[] 1fps every other datapoint jumps 15fps extrap
+[] 1fps every other datapoint jumps 30fps extrap
+[] 1fps every other datapoint jumps 60fps extrap
+
+[] 1fps every datapoint no jumps no extrap
+[] 1fps every datapoint no jumps 15fps extrap
+[] 1fps every datapoint no jumps 30fps extrap
+[] 1fps every datapoint no jumps 60fps extrap
+[] 1fps every other datapoint no jumps no extrap
+[] 1fps every other datapoint no jumps 15fps extrap
+[] 1fps every other datapoint no jumps 30fps extrap
+[] 1fps every other datapoint no jumps 60fps extrap

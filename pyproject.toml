@@ -14,6 +14,9 @@ numpy = [
 ]
 pandas = "^2.2.2"
 
+[tool.poetry.scripts]
+extrap = "neuropy.extrapolateFromData:start"
+
 
 [build-system]
 requires = ["poetry-core"]

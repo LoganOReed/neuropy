@@ -46,7 +46,16 @@ def start():
     args = parser.parse_args()
     print(args)
     # Generate name and read proper file
-
+    if args.skip != 1:
+        if args.jump:
+            name = f"{args.data}_{args.fps}x{args.extrapolation_rate}s{args.skip}j"
+        else:
+            name = f"{args.data}_{args.fps}x{args.extrapolation_rate}s{args.skip}"
+    else:
+        if args.jump:
+            name = f"{args.data}_{args.fps}x{args.extrapolation_rate}j"
+        else:
+            name = f"{args.data}_{args.fps}x{args.extrapolation_rate}"
 
     u = pd.read_csv(f"data/{args.data}.csv", delimiter=",", skiprows=lambda x: x % args.skip != 0, dtype=np.float64)
     n = nv.read_swc(f"data/{args.morphology}.swc")
@@ -58,6 +67,7 @@ def start():
     numIters = u.shape[0] 
     with tempfile.TemporaryDirectory() as tmpdir:
         with alive_bar(numIters) as bar:
+            bar.title(name)
             for index, row in u.iterrows():
                 uCurr = row.to_numpy()
                 if i == 0:
@@ -91,17 +101,10 @@ def start():
 
 
         # Run ffmpeg from python
-        if args.skip != 1:
-            if args.jump:
-                name = f"{args.data}_{args.fps}x{args.extrapolation_rate}s{args.skip}j"
-            else:
-                name = f"{args.data}_{args.fps}x{args.extrapolation_rate}s{args.skip}"
-        else:
-            if args.jump:
-                name = f"{args.data}_{args.fps}x{args.extrapolation_rate}j"
-            else:
-                name = f"{args.data}_{args.fps}x{args.extrapolation_rate}"
-        fname = name + "_" + datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+
+        # Uncomment if you want timestamps on the files
+        # fname = name + "_" + datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+        fname = name
         if args.extrapolation_rate == 0:
             command = shlex.split(f"ffmpeg -framerate {args.fps} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
         else:

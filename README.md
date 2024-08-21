@@ -35,6 +35,12 @@ change actual update from 5 fps to 1 or 2fps
 
 make the update use the linear jump and linear nonjump methods of extrapolation
 
+## Example combination ffmpeg command
+```
+ffmpeg -i EveryOtherSkipJumpComparison/center_1x0s2_2024_08_21-06_12_53_AM.mp4 -i EveryOtherSkipJumpComparison/center_1x60s2j_2024_08_21-06_18_48_AM.mp4 -i EveryOtherSkipJumpComparison/center_1x30s2_2024_08_21-06_15_26_AM.mp4 -i EveryOtherSkipJumpComparison/center_1x60s2_2024_08_21-06_18_17_AM.mp4 -filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]" -map "[v]" output.mp4
+
+```
+
 ## Checklist
 [] 1fps every datapoint jumps no extrap
 [] 1fps every datapoint jumps 15fps extrap

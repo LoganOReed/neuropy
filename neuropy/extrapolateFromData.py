@@ -14,20 +14,18 @@ import matplotlib.pyplot as plt
 from scipy.linalg import lu
 from datetime import datetime
 
-TIME_STEP = 5e-5
 
-def extrapolate(n, i, j, numExtraps, combinedFps, dir, uCurr, slope, timeStep):
-    repeatFrames = combinedFps // numExtraps
-    uApprox = uCurr + (slope * (timeStep / numExtraps) * j)
-    fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uApprox, vmin=-0.010, vmax=0.05, palette="coolwarm")
-    for _ in range(repeatFrames):
-        plt.savefig('outputs/frame{0}.png'.format(numExtraps*i + j))
-        plt.savefig(f'{dir}/frame{i}.png')
+def extrapolate(n, i, j, numExtraps, dir, uCurr, uProjected):
+    uInterpolate = uCurr + (uProjected - uCurr) * (j / numExtraps)
+    fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uInterpolate, vmin=-0.010, vmax=0.05, palette="coolwarm")
+    plt.savefig(f'{dir}/frame{numExtraps*i + j}.png')
     plt.close()
 
     return
 
 def start():
+
+    TIME_STEP = 5e-5
     parser = argparse.ArgumentParser(
         prog='extrap',
         description='Generates Video of extrapolation from data using ffmpeg'
@@ -38,9 +36,10 @@ def start():
     parser.add_argument('-f', '--fps', help="The rate the actual data is used in terms of fps", type=int, default=1)
     parser.add_argument('-e', '--extrapolation-rate', type=int, default=0)
     parser.add_argument('--target-fps', help="The fps of the final video, fps and extrap rate should to be divisors", type=int, default=60)
-    parser.add_argument('-j', '--jump', action="store_false")
+    parser.add_argument('-j', '--jump', help="Flag which determines whether the extrapolation uses previous guess as the starting point", action="store_true")
     parser.add_argument('-s', '--skip', help="Flag which determines whether or not to skip every other row in data", action="store_true")
     parser.add_argument('-c', '--color', help="The color palette, needs to be a name of a matplotlib colormap", default="coolwarm")
+    parser.add_argument('-p', '--preview', help="Flag to automatically launch the video", action="store_true")
 
     args = parser.parse_args()
 # 1x0j
@@ -62,24 +61,30 @@ def start():
 
     i = 0
     uPrev = 0
+    uApprox = 0
     with tempfile.TemporaryDirectory() as tmpdir:
         for index, row in u.iterrows():
             uCurr = row.to_numpy()
             if i == 0:
                 uPrev = uCurr
+                uApprox = uCurr
 
             # create approx slope
-            slope = (uCurr - uPrev) / TIME_STEP
 
             if args.extrapolation_rate == 0:
                 fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uCurr, vmin=-0.010, vmax=0.05, palette=args.color)
                 plt.savefig(f'{tmpdir}/frame{i}.png')
                 plt.close()
             else:
-                numExtraps = args.extrapolation_rate 
-                for j in range(numExtraps):
+                slope = (uCurr - uPrev) / TIME_STEP
+                # uProjected is calculated using a simplified form of the line formula for uCurr and uPrev
+                uProjected = 2*uCurr - uPrev
+                for j in range(args.extrapolation_rate):
                     jobs = []
-                    p = multiprocessing.Process(target= extrapolate, args = (i, j, numExtraps, uCurr, slope, TIME_STEP))
+                    if args.jump:
+                        p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, tmpdir, uCurr, uProjected))
+                    else:
+                        p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, tmpdir, uApprox, uProjected))
                     jobs.append(p)
                     p.start()
                 p.join()
@@ -90,13 +95,8 @@ def start():
             #     fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uApprox, vmin=-0.010, vmax=0.05, palette="coolwarm")
             #     plt.savefig('outputs/frame{0}.png'.format(30*i + j))
             #     plt.close()
-
-            # Save each incremental rotation as frame
-            # for j in range(30):
-            #     plt.savefig('outputs/frame{0}.png'.format(30*i + j))
-            # plt.close()
+            uApprox = 2*uCurr - uPrev
             uPrev = row.to_numpy()
-            # print(uPrev)
             i += 1
 
         # Run ffmpeg from python
@@ -106,6 +106,13 @@ def start():
         else:
             command = shlex.split(f"ffmpeg -framerate {args.extrapolation_rate} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
         subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+
+        if args.preview:
+            command = shlex.split(f"mpv outputs/{fname}.mp4")
+            subprocess.run(command)
+        else:
+            print(f"Wrote to outputs/{fname}.mp4")
+
 
 
 

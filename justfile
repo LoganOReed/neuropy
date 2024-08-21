@@ -11,38 +11,53 @@ clean:
 # without any extrapolation
 
 center:
-    poetry run extrap -d center -f 1 -e 0 
+    poetry run extrap -d center -s 1 -f 1 -e 0 
     poetry run extrap -d center -s 2 -f 1 -e 0 
-    poetry run extrap -d center -f 1 -e 15 
-    poetry run extrap -d center -f 1 -e 15 -j
+    poetry run extrap -d center -s 5 -f 1 -e 0 
+    poetry run extrap -d center -s 1 -f 1 -e 15 
+    poetry run extrap -d center -s 1 -f 1 -e 15 -j
     poetry run extrap -d center -s 2 -f 1 -e 15
     poetry run extrap -d center -s 2 -f 1 -e 15 -j
-    poetry run extrap -d center -f 1 -e 30 
-    poetry run extrap -d center -f 1 -e 30 -j
+    poetry run extrap -d center -s 5 -f 1 -e 15
+    poetry run extrap -d center -s 5 -f 1 -e 15 -j
+    poetry run extrap -d center -s 1 -f 1 -e 30 
+    poetry run extrap -d center -s 1 -f 1 -e 30 -j
     poetry run extrap -d center -s 2 -f 1 -e 30
     poetry run extrap -d center -s 2 -f 1 -e 30 -j
-    poetry run extrap -d center -f 1 -e 60 
-    poetry run extrap -d center -f 1 -e 60 -j
+    poetry run extrap -d center -s 5 -f 1 -e 30
+    poetry run extrap -d center -s 5 -f 1 -e 30 -j
+    poetry run extrap -d center -s 1 -f 1 -e 60 
+    poetry run extrap -d center -s 1 -f 1 -e 60 -j
     poetry run extrap -d center -s 2 -f 1 -e 60
     poetry run extrap -d center -s 2 -f 1 -e 60 -j
-
+    poetry run extrap -d center -s 5 -f 1 -e 60
+    poetry run extrap -d center -s 5 -f 1 -e 60 -j
 
 
 endpoint:
-    poetry run extrap -d endpoint -f 1 -e 0 
+    poetry run extrap -d endpoint -s 1 -f 1 -e 0 
     poetry run extrap -d endpoint -s 2 -f 1 -e 0 
-    poetry run extrap -d endpoint -f 1 -e 15 
-    poetry run extrap -d endpoint -f 1 -e 15 -j
+    poetry run extrap -d endpoint -s 5 -f 1 -e 0 
+    poetry run extrap -d endpoint -s 1 -f 1 -e 15 
+    poetry run extrap -d endpoint -s 1 -f 1 -e 15 -j
     poetry run extrap -d endpoint -s 2 -f 1 -e 15
     poetry run extrap -d endpoint -s 2 -f 1 -e 15 -j
-    poetry run extrap -d endpoint -f 1 -e 30 
-    poetry run extrap -d endpoint -f 1 -e 30 -j
+    poetry run extrap -d endpoint -s 5 -f 1 -e 15
+    poetry run extrap -d endpoint -s 5 -f 1 -e 15 -j
+    poetry run extrap -d endpoint -s 1 -f 1 -e 30 
+    poetry run extrap -d endpoint -s 1 -f 1 -e 30 -j
     poetry run extrap -d endpoint -s 2 -f 1 -e 30
     poetry run extrap -d endpoint -s 2 -f 1 -e 30 -j
-    poetry run extrap -d endpoint -f 1 -e 60 
-    poetry run extrap -d endpoint -f 1 -e 60 -j
+    poetry run extrap -d endpoint -s 5 -f 1 -e 30
+    poetry run extrap -d endpoint -s 5 -f 1 -e 30 -j
+    poetry run extrap -d endpoint -s 1 -f 1 -e 60 
+    poetry run extrap -d endpoint -s 1 -f 1 -e 60 -j
     poetry run extrap -d endpoint -s 2 -f 1 -e 60
     poetry run extrap -d endpoint -s 2 -f 1 -e 60 -j
+    poetry run extrap -d endpoint -s 5 -f 1 -e 60
+    poetry run extrap -d endpoint -s 5 -f 1 -e 60 -j
+
+
 
 
 

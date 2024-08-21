@@ -46,16 +46,17 @@ def start():
     args = parser.parse_args()
     print(args)
     # Generate name and read proper file
+#center_2s30ej
     if args.skip != 1:
         if args.jump:
-            name = f"{args.data}_{args.fps}x{args.extrapolation_rate}s{args.skip}j"
+            name = f"{args.data}_{args.skip}s{args.extrapolation_rate}ej"
         else:
-            name = f"{args.data}_{args.fps}x{args.extrapolation_rate}s{args.skip}"
+            name = f"{args.data}_{args.skip}s{args.extrapolation_rate}e"
     else:
         if args.jump:
-            name = f"{args.data}_{args.fps}x{args.extrapolation_rate}j"
+            name = f"{args.data}_{args.skip}s{args.extrapolation_rate}ej"
         else:
-            name = f"{args.data}_{args.fps}x{args.extrapolation_rate}"
+            name = f"{args.data}_{args.fps}s{args.extrapolation_rate}e"
 
     u = pd.read_csv(f"data/{args.data}.csv", delimiter=",", skiprows=lambda x: x % args.skip != 0, dtype=np.float64)
     n = nv.read_swc(f"data/{args.morphology}.swc")
@@ -106,9 +107,9 @@ def start():
         # fname = name + "_" + datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
         fname = name
         if args.extrapolation_rate == 0:
-            command = shlex.split(f"ffmpeg -framerate {args.fps} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
+            command = shlex.split(f"ffmpeg -y -framerate {args.fps} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
         else:
-            command = shlex.split(f"ffmpeg -framerate {args.extrapolation_rate} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
+            command = shlex.split(f"ffmpeg -y -framerate {args.extrapolation_rate} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
         subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
 
         if args.preview:

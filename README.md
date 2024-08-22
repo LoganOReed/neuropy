@@ -8,9 +8,9 @@ Here is an example filename
 center_2s30ej.mp4
 ```
 It starts with the name of the data file, e.g. "center", which is always followed by an underscore.
-Then there will a number followed by s, which shows how often the data rows are skipped (hence the s).
+Then there will a number followed by s, which shows how often the data rows are skipped.
 For example, "2s" means it uses every other, "5s" means it uses every fifth.
-Then there will be a number followed by e, which is the number of distinct points shown during the linear extrapolation process.
+Likewise, there will be a number followed by e which denotes the number of extrapolation frames per actual row of data.
 Lastly, the optional "j" indicates that the visualization jumps to the calculated value instead of using an approximate point found during extrapolation to smooth the visualization.
 
 ## How to Run the Code

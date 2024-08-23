@@ -81,13 +81,22 @@ jump-comparison:
     poetry run extrap -d endpointFull -s 15 -e 30
     poetry run extrap -d endpointFull -s 15 -e 30 -j
     ffmpeg -y -i outputs/endpointFull_15s30e.mp4 -i outputs/endpointFull_15s30ej.mp4 -filter_complex hstack outputs/jumpComparison_15s30e.mp4
+    poetry run extrap -d endpointFull -s 15 -e 0
+    poetry run extrap -d endpointFull -f 15 -e 0 
+    ffmpeg -y -i outputs/endpointFull_15f0e.mp4 -i outputs/endpointFull_15s0e.mp4 -i outputs/endpointFull_15s30e.mp4 -i outputs/endpointFull_15s30ej.mp4 -filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]" -map "[v]" outputs/jumpComparison_full.mp4
 
 basic-comparison:
     poetry run extrap -d center -s 5
     poetry run extrap -d center -s 5 -e 15 -j
     poetry run extrap -d center -s 5 -e 30
     poetry run extrap -d center -s 5 -e 30 -j
-    ffmpeg -y -i outputs/center_5s0e.mp4 -i outputs/center_5s15ej.mp4 -i outputs/center_5s30e.mp4 -i outputs/center_5s30ej.mp4 -filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]" -map "[v]" outputs/basicComparison.mp4
+    ffmpeg -y -i outputs/center_5s0e.mp4 -i outputs/center_5s15ej.mp4 -i outputs/center_5s30e.mp4 -i outputs/center_5s30ej.mp4 -filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]" -map "[v]" outputs/basicComparison_center.mp4
+    poetry run extrap -d centerFull -s 5
+    poetry run extrap -d centerFull -s 5 -e 15 -j
+    poetry run extrap -d centerFull -s 5 -e 30
+    poetry run extrap -d centerFull -s 5 -e 30 -j
+    ffmpeg -y -i outputs/centerFull_5s0e.mp4 -i outputs/centerFull_5s15ej.mp4 -i outputs/centerFull_5s30e.mp4 -i outputs/centerFull_5s30ej.mp4 -filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]" -map "[v]" outputs/basicComparison_centerFull.mp4
+
 
 
 

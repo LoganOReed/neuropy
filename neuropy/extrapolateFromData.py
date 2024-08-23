@@ -74,9 +74,9 @@ def start():
             name = f"{args.data}_{args.skip}s{args.extrapolation_rate}e"
     else:
         if args.jump:
-            name = f"{args.data}_{args.skip}s{args.extrapolation_rate}ej"
+            name = f"{args.data}_{args.fps}f{args.extrapolation_rate}ej"
         else:
-            name = f"{args.data}_{args.fps}s{args.extrapolation_rate}e"
+            name = f"{args.data}_{args.fps}f{args.extrapolation_rate}e"
 
     u = pd.read_csv(f"data/{args.data}.csv", delimiter=",", skiprows=lambda x: x % args.skip != 0, dtype=np.float64)
     n = nv.read_swc(f"data/{args.morphology}.swc")

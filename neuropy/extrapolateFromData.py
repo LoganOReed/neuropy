@@ -24,17 +24,17 @@ def extrapolate(n, i, j, numExtraps, numSkip, isJump, dir, uCurr, uProjected):
     axtext = inset_axes(ax, width="30%", height="40%", loc="center left")
     fig.patch.set_visible(False)
     if isJump:
-        fig.suptitle(f"Display One in {numSkip} Data Points, {numExtraps} Extrapolations per Data Point (from data point)")
+        fig.suptitle(f"Display One in {numSkip} Simulation Data Points, \n{numExtraps} Extrapolations per Data Point (from Data Point)")
     else:
-        fig.suptitle(f"Display One in {numSkip} Data Points, {numExtraps} Extrapolations per Data Point (from extrapolated point)")
+        fig.suptitle(f"Display One in {numSkip} Simulation Data Points, \n{numExtraps} Extrapolations per Data Point (from Extrapolated Point)")
 
     axtext.axis('off')
     # axtext.tick_params(axis='both', which='both', labelsize='large',
     #            bottom=False, top=False, labelbottom=False,
     #            left=False, right=False, labelleft=False)
-    axtext.text(0,0.9, f"Sim: {i+1}", ha='right', fontsize="large")
-    axtext.text(0,0.8, f"Ext: {j+1}", ha='right', fontsize="large")
-    axtext.text(0,0.7, f"Ext Total: {numExtraps*i+j+1}", ha='right', fontsize="large")
+    axtext.text(0,0.9, f"Simulation: {i+1}", ha='right', fontsize="large")
+    axtext.text(0,0.8, f"Extrapolation: {j+1}", ha='right', fontsize="large")
+    axtext.text(0,0.7, f"Extrapolation Total: {numExtraps*i+j+1}", ha='right', fontsize="large")
     # ax.annotate(f"{numExtraps*i + j}", 
     #             xy=(1,3),
     #             xytext=(1, 3)
@@ -100,6 +100,12 @@ def start():
 
                 if args.extrapolation_rate == 0:
                     fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uCurr, vmin=-0.010, vmax=0.05, palette=args.color)
+
+                    axtext = inset_axes(ax, width="30%", height="40%", loc="center left")
+                    fig.patch.set_visible(False)
+                    fig.suptitle(f"Display One in {args.skip} Simulation Data Points, \n{args.extrapolation_rate} Extrapolations per Data Point (from Data Point)")
+                    axtext.axis('off')
+                    axtext.text(0,0.9, f"Simulation: {i+1}", ha='right', fontsize="large")
                     plt.savefig(f'{tmpdir}/frame{i}.png')
                     plt.close()
                 else:

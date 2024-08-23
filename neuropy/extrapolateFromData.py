@@ -15,11 +15,31 @@ import matplotlib.cm as cm
 import matplotlib.pyplot as plt
 from scipy.linalg import lu
 from datetime import datetime
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
-def extrapolate(n, i, j, numExtraps, dir, uCurr, uProjected):
+def extrapolate(n, i, j, numExtraps, numSkip, isJump, dir, uCurr, uProjected):
     uInterpolate = uCurr + (uProjected - uCurr) * (j / numExtraps)
     fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uInterpolate, vmin=-0.010, vmax=0.05, palette="coolwarm")
+    axtext = inset_axes(ax, width="30%", height="40%", loc="center left")
+    fig.patch.set_visible(False)
+    if isJump:
+        fig.suptitle(f"Display One in {numSkip} Data Points, {numExtraps} Extrapolations per Data Point (from data point)")
+    else:
+        fig.suptitle(f"Display One in {numSkip} Data Points, {numExtraps} Extrapolations per Data Point (from extrapolated point)")
+
+    axtext.axis('off')
+    # axtext.tick_params(axis='both', which='both', labelsize='large',
+    #            bottom=False, top=False, labelbottom=False,
+    #            left=False, right=False, labelleft=False)
+    axtext.text(0,0.9, f"Sim: {i+1}", ha='right', fontsize="large")
+    axtext.text(0,0.8, f"Ext: {j+1}", ha='right', fontsize="large")
+    axtext.text(0,0.7, f"Ext Total: {numExtraps*i+j+1}", ha='right', fontsize="large")
+    # ax.annotate(f"{numExtraps*i + j}", 
+    #             xy=(1,3),
+    #             xytext=(1, 3)
+    #             )
+    # ax.text(-0.9,0.3, "frame: 1234567890", ha='right')
     plt.savefig(f'{dir}/frame{numExtraps*i + j}.png')
     plt.close()
 
@@ -64,7 +84,6 @@ def start():
     i = 0
     uPrev = 0
     uApprox = 0
-    print(u.shape[0])
     numIters = u.shape[0] 
     with tempfile.TemporaryDirectory() as tmpdir:
         with alive_bar(numIters) as bar:
@@ -73,6 +92,8 @@ def start():
                 uCurr = row.to_numpy()
                 if i == 0:
                     uPrev = uCurr
+                    uApprox = uCurr
+                if i == 1:
                     uApprox = uCurr
 
                 # create approx slope
@@ -87,9 +108,9 @@ def start():
                     for j in range(args.extrapolation_rate):
                         jobs = []
                         if args.jump:
-                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, tmpdir, uCurr, uProjected))
+                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uCurr, uProjected))
                         else:
-                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, tmpdir, uApprox, uProjected))
+                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uApprox, uProjected))
                         jobs.append(p)
                         p.start()
                     p.join()

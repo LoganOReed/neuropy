@@ -17,6 +17,7 @@ alive-progress = "^3.1.5"
 
 [tool.poetry.scripts]
 extrap = "neuropy.extrapolateFromData:start"
+l1 = "neuropy.extrapolateL1:start"
 
 
 [build-system]

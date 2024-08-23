@@ -14,36 +14,18 @@ from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 def extrapolate(n, i, j, numExtraps, numSkip, isJump, dir, uCurr, uProjected, data):
     uInterpolate = uCurr + (uProjected - uCurr) * (j / numExtraps)
-    fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uInterpolate, vmin=-0.010, vmax=0.05, palette="coolwarm")
-    axtext = inset_axes(ax, width="30%", height="40%", loc="center left")
-    fig.patch.set_visible(False)
-    if isJump:
-        fig.suptitle(f"Display One in {numSkip} Simulation Data Points, \n{numExtraps} Extrapolations per Data Point (from Data Point)")
-    else:
-        fig.suptitle(f"Display One in {numSkip} Simulation Data Points, \n{numExtraps} Extrapolations per Data Point (from Extrapolated Point)")
-
-    axtext.axis('off')
-    # axtext.tick_params(axis='both', which='both', labelsize='large',
-    #            bottom=False, top=False, labelbottom=False,
-    #            left=False, right=False, labelleft=False)
-    axtext.text(0,0.9, f"Simulation: {i+1}", ha='right', fontsize="large")
-    axtext.text(0,0.8, f"Extrapolation: {j+1}", ha='right', fontsize="large")
-    axtext.text(0,0.7, f"Extrapolation Total: {numExtraps*i+j+1}", ha='right', fontsize="large")
     try:
         uActual = pd.read_csv(f"data/{data}.csv", delimiter=",", header=None, skiprows=lambda x:x != i*numExtraps + j , dtype=np.float64)
         l1 = LA.norm(uActual-uInterpolate, 1)
-        axtext.text(0,0.6, f"L1: {l1}", ha='right', fontsize="large")
     except pd.errors.EmptyDataError:
-        axtext.text(0,0.6, f"L1: {0.0}", ha='right', fontsize="large")
+        l1 = 0
     # ax.annotate(f"{numExtraps*i + j}", 
     #             xy=(1,3),
     #             xytext=(1, 3)
     #             )
     # ax.text(-0.9,0.3, "frame: 1234567890", ha='right')
-    plt.savefig(f'{dir}/frame{numExtraps*i + j}.png')
-    plt.close()
 
-    return
+    return l1
 
 def start():
 
@@ -82,6 +64,7 @@ def start():
     u = pd.read_csv(f"data/{args.data}.csv", delimiter=",", header=None, dtype=np.float64)
     n = nv.read_swc(f"data/{args.morphology}.swc")
 
+    norms = []
     i = 0
     uPrev = 0
     uApprox = 0
@@ -95,36 +78,20 @@ def start():
                 if i == 0:
                     uPrev = uCurr
                     uApprox = uCurr
-                # if i == 1:
-                #     uApprox = uCurr
-
-                # create approx slope
 
                 if args.extrapolation_rate == 0:
-                    fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uCurr, vmin=-0.010, vmax=0.05, palette=args.color)
                     uActual = pd.read_csv(f"data/{args.data}.csv", delimiter=",", header=None, skiprows=lambda x:x != i*args.skip, dtype=np.float64)
 
                     l1 = LA.norm(uActual-uCurr, 1)
-                    axtext = inset_axes(ax, width="30%", height="40%", loc="center left")
-                    fig.patch.set_visible(False)
-                    fig.suptitle(f"Display One in {args.skip} Simulation Data Points, \n{args.extrapolation_rate} Extrapolations per Data Point (from Data Point)")
-                    axtext.axis('off')
-                    axtext.text(0,0.9, f"Simulation: {i+1}", ha='right', fontsize="large")
-                    axtext.text(0,0.8, f"L1: {l1}", ha='right', fontsize="large")
-                    plt.savefig(f'{tmpdir}/frame{i}.png')
-                    plt.close()
+                    norms = norms + [l1]
                 else:
                     # uProjected is calculated using a simplified form of the line formula for uCurr and uPrev
                     uProjected = 2*uCurr - uPrev
                     for j in range(args.extrapolation_rate):
-                        jobs = []
                         if args.jump:
-                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uCurr, uProjected, args.data))
+                            norms = norms + [extrapolate(n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uCurr, uProjected, args.data)]
                         else:
-                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uApprox, uProjected, args.data))
-                        jobs.append(p)
-                        p.start()
-                    p.join()
+                            norms = norms + [extrapolate(n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uApprox, uProjected, args.data)]
 
 
                 uApprox = 2*uCurr - uPrev
@@ -137,19 +104,25 @@ def start():
 
         # Uncomment if you want timestamps on the files
         # fname = name + "_" + datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
-        fname = name
-        if args.extrapolation_rate == 0:
-            command = shlex.split(f"ffmpeg -y -framerate {args.fps} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
-        else:
-            command = shlex.split(f"ffmpeg -y -framerate {args.extrapolation_rate} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
-        subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
-
+        plt.plot(norms)
         if args.preview:
-            command = shlex.split(f"mpv outputs/{fname}.mp4")
-            subprocess.run(command)
-        else:
-            print(f"Wrote to outputs/{fname}.mp4")
+            plt.show()
+        plt.savefig(f'outputs/{name}_l1.png')
+        print(f"Wrote to outputs/{name}_l1.png")
 
+        # fname = name
+        # if args.extrapolation_rate == 0:
+        #     command = shlex.split(f"ffmpeg -y -framerate {args.fps} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
+        # else:
+        #     command = shlex.split(f"ffmpeg -y -framerate {args.extrapolation_rate} -i '{tmpdir}/frame%d.png' -r {args.target_fps} outputs/{fname}.mp4")
+        # subprocess.run(command, stdout=subprocess.DEVNULL, stderr=subprocess.STDOUT)
+        #
+        # if args.preview:
+        #     command = shlex.split(f"mpv outputs/{fname}.mp4")
+        #     subprocess.run(command)
+        # else:
+        #     print(f"Wrote to outputs/{fname}.mp4")
+        #
 
 
 

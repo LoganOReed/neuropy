@@ -75,15 +75,21 @@ endpoint-extra:
     poetry run extrap -d endpoint -s 5 -f 1 -e 60 -j
 
 jump-comparison:
-    poetry run extrap -d endpointFull -s 10 -e 30
-    poetry run extrap -d endpointFull -s 10 -e 30 -j
-    ffmpeg -y -i outputs/endpointFull_10s30e.mp4 -i outputs/endpointFull_10s30ej.mp4 -filter_complex hstack outputs/jumpComparison_10s30e.mp4
-    poetry run extrap -d endpointFull -s 15 -e 30
-    poetry run extrap -d endpointFull -s 15 -e 30 -j
-    ffmpeg -y -i outputs/endpointFull_15s30e.mp4 -i outputs/endpointFull_15s30ej.mp4 -filter_complex hstack outputs/jumpComparison_15s30e.mp4
-    poetry run extrap -d endpointFull -s 15 -e 0
-    poetry run extrap -d endpointFull -f 15 -e 0 
-    ffmpeg -y -i outputs/endpointFull_15f0e.mp4 -i outputs/endpointFull_15s0e.mp4 -i outputs/endpointFull_15s30e.mp4 -i outputs/endpointFull_15s30ej.mp4 -filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]" -map "[v]" outputs/jumpComparison_full.mp4
+    poetry run extrap -d endpointFull -s 15 -e 15
+    poetry run extrap -d endpointFull -s 15 -e 15 -j
+    ffmpeg -y -i outputs/endpointFull_15s15e.mp4 -i outputs/endpointFull_15s15ej.mp4 -filter_complex hstack outputs/jumpComparison_15s15e.mp4
+    poetry run extrap -d endpointFull -s 10 -e 10 
+    poetry run extrap -d endpointFull -s 10 -e 10 -j
+    poetry run extrap -d endpointFull -s 10 -e 0
+    poetry run extrap -d endpointFull -f 10 -e 0 
+    ffmpeg -y -i outputs/endpointFull_10f0e.mp4 -i outputs/endpointFull_10s0e.mp4 -i outputs/endpointFull_10s10e.mp4 -i outputs/endpointFull_10s10ej.mp4 -filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]" -map "[v]" outputs/jumpComparison_full.mp4
+
+temp-fix:
+    poetry run extrap -d endpointFull -s 10 -e 10 
+    poetry run extrap -d endpointFull -s 10 -e 10 -j
+    poetry run extrap -d endpointFull -s 10 -e 0
+    poetry run extrap -d endpointFull -f 10 -e 0 
+    ffmpeg -y -i outputs/endpointFull_10f0e.mp4 -i outputs/endpointFull_10s0e.mp4 -i outputs/endpointFull_10s10e.mp4 -i outputs/endpointFull_10s10ej.mp4 -filter_complex "[0:v][1:v][2:v][3:v]xstack=inputs=4:layout=0_0|w0_0|0_h0|w0_h0[v]" -map "[v]" outputs/jumpComparison_full.mp4
 
 basic-comparison:
     poetry run extrap -d center -s 5

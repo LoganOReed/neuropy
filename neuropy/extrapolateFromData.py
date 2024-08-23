@@ -1,7 +1,6 @@
 import multiprocessing
 from alive_progress import alive_bar
 import numpy as np
-from numpy import linalg as LA
 import argparse
 import tempfile
 import subprocess
@@ -12,7 +11,7 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1.inset_locator import inset_axes
 
 
-def extrapolate(n, i, j, numExtraps, numSkip, isJump, dir, uCurr, uProjected, data):
+def extrapolate(n, i, j, numExtraps, numSkip, isJump, dir, uCurr, uProjected):
     uInterpolate = uCurr + (uProjected - uCurr) * (j / numExtraps)
     fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uInterpolate, vmin=-0.010, vmax=0.05, palette="coolwarm")
     axtext = inset_axes(ax, width="30%", height="40%", loc="center left")
@@ -29,12 +28,6 @@ def extrapolate(n, i, j, numExtraps, numSkip, isJump, dir, uCurr, uProjected, da
     axtext.text(0,0.9, f"Simulation: {i+1}", ha='right', fontsize="large")
     axtext.text(0,0.8, f"Extrapolation: {j+1}", ha='right', fontsize="large")
     axtext.text(0,0.7, f"Extrapolation Total: {numExtraps*i+j+1}", ha='right', fontsize="large")
-    try:
-        uActual = pd.read_csv(f"data/{data}.csv", delimiter=",", header=None, skiprows=lambda x:x != i*numExtraps + j , dtype=np.float64)
-        l1 = LA.norm(uActual-uInterpolate, 1)
-        axtext.text(0,0.6, f"L1: {l1}", ha='right', fontsize="large")
-    except pd.errors.EmptyDataError:
-        axtext.text(0,0.6, f"L1: {0.0}", ha='right', fontsize="large")
     # ax.annotate(f"{numExtraps*i + j}", 
     #             xy=(1,3),
     #             xytext=(1, 3)
@@ -78,19 +71,17 @@ def start():
         else:
             name = f"{args.data}_{args.fps}f{args.extrapolation_rate}e"
 
-    # u = pd.read_csv(f"data/{args.data}.csv", delimiter=",", header=None, skiprows=lambda x:x % args.skip != 0, dtype=np.float64)
-    u = pd.read_csv(f"data/{args.data}.csv", delimiter=",", header=None, dtype=np.float64)
+    u = pd.read_csv(f"data/{args.data}.csv", delimiter=",", header=None, skiprows=lambda x:x % args.skip != 0, dtype=np.float64)
     n = nv.read_swc(f"data/{args.morphology}.swc")
 
     i = 0
     uPrev = 0
     uApprox = 0
-    numIters = u.query(f'index % {args.skip} == 0').shape[0] 
+    numIters = u.shape[0] 
     with tempfile.TemporaryDirectory() as tmpdir:
         with alive_bar(numIters) as bar:
             bar.title(name)
-            for index, row in u.query(f'index % {args.skip} == 0').iterrows():
-                # print(index)
+            for index, row in u.iterrows():
                 uCurr = row.to_numpy()
                 if i == 0:
                     uPrev = uCurr
@@ -102,15 +93,12 @@ def start():
 
                 if args.extrapolation_rate == 0:
                     fig, ax = nv.plot2d(n, linewidth=3, method='2d', view=('x', 'y'), color_by=uCurr, vmin=-0.010, vmax=0.05, palette=args.color)
-                    uActual = pd.read_csv(f"data/{args.data}.csv", delimiter=",", header=None, skiprows=lambda x:x != i*args.skip, dtype=np.float64)
 
-                    l1 = LA.norm(uActual-uCurr, 1)
                     axtext = inset_axes(ax, width="30%", height="40%", loc="center left")
                     fig.patch.set_visible(False)
                     fig.suptitle(f"Display One in {args.skip} Simulation Data Points, \n{args.extrapolation_rate} Extrapolations per Data Point (from Data Point)")
                     axtext.axis('off')
                     axtext.text(0,0.9, f"Simulation: {i+1}", ha='right', fontsize="large")
-                    axtext.text(0,0.8, f"L1: {l1}", ha='right', fontsize="large")
                     plt.savefig(f'{tmpdir}/frame{i}.png')
                     plt.close()
                 else:
@@ -119,9 +107,9 @@ def start():
                     for j in range(args.extrapolation_rate):
                         jobs = []
                         if args.jump:
-                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uCurr, uProjected, args.data))
+                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uCurr, uProjected))
                         else:
-                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uApprox, uProjected, args.data))
+                            p = multiprocessing.Process(target= extrapolate, args = (n, i, j, args.extrapolation_rate, args.skip, args.jump, tmpdir, uApprox, uProjected))
                         jobs.append(p)
                         p.start()
                     p.join()

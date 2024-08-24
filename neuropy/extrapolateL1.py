@@ -105,9 +105,7 @@ def start():
         # Uncomment if you want timestamps on the files
         # fname = name + "_" + datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
         plt.plot(norms)
-        if args.preview:
-            plt.show()
-        plt.savefig(f'outputs/{name}_l1.png')
+        plt.show()
         print(f"Wrote to outputs/{name}_l1.png")
 
         # fname = name

@@ -7,13 +7,14 @@ readme = "README.md"
 
 [tool.poetry.dependencies]
 python = ">=3.9,<3.11"
-navis = {git = "https://github.com/navis-org/navis.git", rev = "master"}
+# navis = {git = "https://github.com/navis-org/navis.git", rev = "master"}
 numpy = [
     {version = "<1.22", python = "<3.8"},
     {version = "<=1.22.5", python = "^3.8"}
 ]
 pandas = "^2.2.2"
 alive-progress = "^3.1.5"
+navis = "^1.7.0"
 
 [tool.poetry.scripts]
 extrap = "neuropy.extrapolateFromData:start"

@@ -134,8 +134,10 @@ if __name__ == "__main__":
     # data = pd.concat([data,data2])
     plt.rcParams.update({'font.size': 20})
     fig, ax = plt.subplots(figsize=(6,3))
-    ax.plot(range(200),data[:200], 'b', label="Linear Extrapolation without Jumps")
-    ax.plot(range(200),data2[:200], 'g', label="Linear Extrapolation with Jumps")
+    ax.plot(range(200),data[:200], '#ed3624', label="Linear Extrapolation without Jumps")
+    ax.plot(range(200),data2[:200], '#fa9d00', label="Linear Extrapolation with Jumps")
+    
+    
     ax.set_xticks(np.arange(0,200,10))
     ax.grid(which="both", axis='x')
     ax.legend(fontsize=24)

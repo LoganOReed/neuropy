@@ -106,7 +106,7 @@ def start():
         # fname = name + "_" + datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
         # Write data to file to combine plots
         df = pd.DataFrame(norms)
-        df.to_csv(f"data/{name}_l1.csv", index=False)
+        df.to_csv(f"data/{name}_l1.csv")
         print(df)
         plt.plot(norms)
         plt.show()
@@ -129,7 +129,22 @@ def start():
 
 
 if __name__ == "__main__":
-    start()
+    data = pd.read_csv("data/endpointFull_10s10e_l1.csv")
+    data2 = pd.read_csv("data/endpointFull_10s10ej_l1.csv")
+    # data = pd.concat([data,data2])
+    plt.rcParams.update({'font.size': 20})
+    fig, ax = plt.subplots(figsize=(6,3))
+    ax.plot(range(200),data[:200], 'b', label="Linear Extrapolation without Jumps")
+    ax.plot(range(200),data2[:200], 'g', label="Linear Extrapolation with Jumps")
+    ax.set_xticks(np.arange(0,200,10))
+    ax.grid(which="both", axis='x')
+    ax.legend(fontsize=24)
+    # plt.title("Linear Extrapolation ", fontsize=24)
+    plt.xlabel("Extrapolation Step", fontsize=24)
+    plt.ylabel("L1 Norm", fontsize=24)
+    plt.show()
+
+    plt.savefig(f'outputs/endpointFull_10s10e_both_l1.png')
 
 # fig, ax = nv.plot2d(n, method='2d', view=('x', 'y'), depth_coloring=True)
 #
